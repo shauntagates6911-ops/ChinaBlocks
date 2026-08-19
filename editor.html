@@ -1,0 +1,1070 @@
+</DOCTYPE! html>
+</title>ChinaBlocks play</title>
+// ... standard imports ...
+
+// 1. Target the Motion color (Match image 📸)
+Blockly.Colours.motion.primary = '#4C8BF5'; // Bright Blue
+
+// 2. Extend the SVG prototype to inject HTML content
+Blockly.BlockSvg.prototype.updateDisplay_ = function() {
+    // Only apply this hack to Motion category blocks
+    if (this.type && this.type.startsWith('motion_')) {
+        this.renderHtmlContent_();
+    }
+    // Original rendering logic continues...
+};
+
+// 3. Define the HTML content and styling
+Blockly.BlockSvg.prototype.renderHtmlContent_ = function() {
+    if (this.htmlContent_) return; // Prevent double rendering
+
+    const block = this;
+    const blockWidth = this.height_ || 150; // Dynamic height fallback
+    const blockHeight = 40; // Standard block height
+
+    // Create foreignObject to embed HTML inside SVG
+    const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+        'class': 'block-html-overlay',
+        'x': 8, // Offset for the curve
+        'y': 0,
+        'width': blockWidth - 16,
+        'height': blockHeight,
+    }, this.svgGroup_);
+
+    // The HTML content wrapper
+    const htmlWrapper = document.createElement('div');
+    htmlWrapper.className = 'motion-html-wrapper';
+
+    // *** INJECT CUSTOM HTML HERE ***
+    htmlWrapper.innerHTML = `
+        <div class="block-label">
+            <span class="label-text">${this.type.replace('motion_', '').replace(/_/g, ' ')}</span>
+            <input type="number" class="html-input" defaultValue="10" />
+            <span class="label-text">steps</span>
+        </div>
+    `;
+
+    // Handle input interaction back to the block's data model
+    const input = htmlWrapper.querySelector('.html-input');
+    if (input) {
+        input.addEventListener('input', (e) => {
+            // Send new value to the scratch-vm block state
+            block.setFieldValue(e.target.value, 'STEPS'); 
+        });
+    }
+
+    foreignObject.appendChild(htmlWrapper);
+    this.htmlContent_ = foreignObject;
+};
+// ... standard Blockly styles ...
+
+Blockly.Css.CONTENT.push(
+  /* 1. Target standard Blockly motion paths and override color */
+  '.blocklyPath[stroke="#4C8BF5"] {',
+    'fill: #4C8BF5 !important;',
+    'stroke: #3174E3 !important;', // Slightly darker blue stroke
+  '}',
+
+  /* 2. Style the new HTML wrapper within the block */
+  '.motion-html-wrapper {',
+    'width: 100%;',
+    'height: 100%;',
+    'display: flex;',
+    'align-items: center;',
+    'justify-content: space-between;',
+    'padding: 0 10px;',
+    'color: white;',
+    'font-family: "Helvetica Neue", sans-serif;',
+    'font-weight: bold;',
+    'font-size: 14px;',
+    'pointer-events: none;', // Let SVG handle drags
+  '}',
+
+  '.block-label {',
+    'display: flex;',
+    'align-items: center;',
+    'gap: 8px;',
+  '}',
+
+  /* 3. Style HTML elements (inputs) */
+  '.html-input {',
+    'width: 40px;',
+    'height: 20px;',
+    'border: none;',
+    'border-radius: 4px;',
+    'background: rgba(255, 255, 255, 0.8);',
+    'color: #3174E3;',
+    'text-align: center;',
+    'font-weight: bold;',
+    'font-size: 13px;',
+    'pointer-events: auto !important;', // Force input interaction
+  '}'
+);
+// Ensure motion blocks are included in default project JSON
+const projectData = {
+    targets: [
+        {
+            id: 'sprite1',
+            name: 'Mascot',
+            blocks: {
+                'block1': {
+                    opcode: 'motion_movesteps', // Triggers our render logic
+                    next: null,
+                    parent: null,
+                    inputs: {
+                        STEPS: [1, [10, "10"]]
+                    },
+                    fields: {},
+                    shadow: false,
+                    topLevel: true,
+                    x: 100,
+                    y: 100
+                }
+            }
+        }
+    ]
+};
+// scratch-blocks/core/constants.js HACK 🧪
+
+// Override corner curves (defines the top-left / top-right rounded corners)
+Blockly.BlockSvg.CORNER_RADIUS = 4; // Change roundness!
+
+// Hack the top puzzle notch ("The Top Notch")
+Blockly.BlockSvg.NOTCH_PATH_LEFT = 
+    'c 2,0 3,1 4,2 ' +
+    'l 4,4 ' +
+    'c 1,1 2,2 4,2 ' +
+    'h 12 ' +
+    'c 2,0 3,-1 4,-2 ' +
+    'l 4,-4 ' +
+    'c 1,-1 2,-2 4,-2';
+// scratch-blocks/core/colours.js
+Blockly.Colours.looks = {
+    primary: "#8A52ED",      // Exact Purple from your palette 🟣
+    secondary: "#7539D8",    // Slightly darker shade for dropdowns/borders
+    tertiary: "#5E25BD"      // Dark accent color
+};
+// Inside scratch-blocks/core/block_svg.js
+
+Blockly.BlockSvg.prototype.updateLooksDisplay_ = function() {
+    if (this.type && this.type.startsWith('looks_')) {
+        this.renderLooksHtmlContent_();
+    }
+};
+
+Blockly.BlockSvg.prototype.renderLooksHtmlContent_ = function() {
+    if (this.looksHtmlContent_) return; // Prevent duplicate hooks
+
+    const block = this;
+    const blockWidth = this.width_ || 160;
+    const blockHeight = 40;
+
+    // Create foreignObject overlay for Looks block HTML elements
+    const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+        'class': 'looks-html-overlay',
+        'x': 8,
+        'y': 0,
+        'width': blockWidth - 16,
+        'height': blockHeight
+    }, this.svgGroup_);
+
+    const container = document.createElement('div');
+    container.className = 'looks-html-wrapper';
+
+    // Build interactive input elements depending on the block opcode
+    if (this.type === 'looks_say') {
+        container.innerHTML = `
+            <div class="looks-label">
+                <span>say</span>
+                <input type="text" class="looks-input" value="Hello! 🇨🇳" />
+            </div>
+        `;
+    } else if (this.type === 'looks_setsizeto') {
+        container.innerHTML = `
+            <div class="looks-label">
+                <span>set size to</span>
+                <input type="number" class="looks-input number-input" value="100" />
+                <span>%</span>
+            </div>
+        `;
+    } else {
+        // Fallback generic Looks layout
+        container.innerHTML = `
+            <div class="looks-label">
+                <span>${this.type.replace('looks_', '').replace(/_/g, ' ')}</span>
+            </div>
+        `;
+    }
+
+    // Attach listeners back to scratch-vm state
+    const input = container.querySelector('.looks-input');
+    if (input) {
+        input.addEventListener('input', (e) => {
+            block.setFieldValue(e.target.value, 'MESSAGE');
+        });
+    }
+
+    foreignObject.appendChild(container);
+    this.looksHtmlContent_ = foreignObject;
+};
+// scratch-blocks/core/css.js
+
+Blockly.Css.CONTENT.push(
+  /* Force exact primary color for all looks blocks */
+  '.blocklyPath[fill="#8A52ED"] {',
+    'fill: #8A52ED !important;',
+    'stroke: #7539D8 !important;',
+  '}',
+
+  /* HTML Overlay layout for Looks category */
+  '.looks-html-wrapper {',
+    'width: 100%;',
+    'height: 100%;',
+    'display: flex;',
+    'align-items: center;',
+    'padding: 0 8px;',
+    'color: #FFFFFF;',
+    'font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;',
+    'font-weight: bold;',
+    'font-size: 13px;',
+    'pointer-events: none;',
+  '}',
+
+  '.looks-label {',
+    'display: flex;',
+    'align-items: center;',
+    'gap: 6px;',
+  '}',
+
+  '.looks-input {',
+    'height: 22px;',
+    'border: none;',
+    'border-radius: 4px;',
+    'background: #FFFFFF;',
+    'color: #7539D8;',
+    'padding: 0 6px;',
+    'font-weight: bold;',
+    'font-size: 12px;',
+    'outline: none;',
+    'pointer-events: auto !important;',
+  '}',
+
+  '.number-input {',
+    'width: 45px;',
+    'text-align: center;',
+  '}'
+);
+const defaultProject = {
+    targets: [
+        {
+            id: 'target_sprite',
+            name: 'Mascot',
+            blocks: {
+                'looks_block_1': {
+                    opcode: 'looks_say',
+                    next: 'looks_block_2',
+                    parent: null,
+                    inputs: {
+                        MESSAGE: [1, [10, "Hello! 🇨🇳"]]
+                    },
+                    fields: {},
+                    shadow: false,
+                    topLevel: true,
+                    x: 120,
+                    y: 120
+                },
+                'looks_block_2': {
+                    opcode: 'looks_setsizeto',
+                    next: null,
+                    parent: 'looks_block_1',
+                    inputs: {
+                        SIZE: [1, [4, "100"]]
+                    },
+                    fields: {},
+                    shadow: false,
+                    topLevel: false
+                }
+            }
+        }
+    ]
+};
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>ChinaBlocks 🇨🇳</title>
+    <script type="text/javascript">
+      // Clean URL router hack for GitHub Pages
+      var pathSegmentsToKeep = 0; // Set to 1 if using a subfolder repo name!
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
+<script type="text/javascript">
+  // Decode the clean URL path passed from 404.html
+  (function(l) {
+    if (l.search[1] === '/' ) {
+      var decoded = l.search.slice(1).split('&').map(function(s) { 
+        return s.replace(/~and~/g, '&')
+      }).join('?');
+      window.history.replaceState(null, null,
+          l.pathname.slice(0, -1) + decoded + l.hash
+      );
+    }
+  }(window.location));
+</script>
+// scratch-blocks/core/colours.js
+Blockly.Colours.sound = {
+    primary: "#D652CE",    // Exact Pink-Magenta 🌸
+    secondary: "#B53FAF",  // Darker accent
+    tertiary: "#942D8E"
+};
+const BlockType = require('../../extension-support/block-type');
+const ArgumentType = require('../../extension-support/argument-type');
+
+class Scratch3SoundExpanded {
+    constructor (runtime) {
+        this.runtime = runtime;
+    }
+
+    getInfo () {
+        return {
+            id: 'sound',
+            name: 'Sound 🔊',
+            color1: '#D652CE',
+            color2: '#B53FAF',
+            blocks: [
+                // Standard & Expanded Sound Blocks (30 Total!) 🌸
+                { opcode: 'playUntilDone', blockType: BlockType.COMMAND, text: 'play sound [SOUND_MENU] until done', arguments: { SOUND_MENU: { type: ArgumentType.STRING, defaultValue: 'Meow' } } },
+                { opcode: 'startSound', blockType: BlockType.COMMAND, text: 'start sound [SOUND_MENU]', arguments: { SOUND_MENU: { type: ArgumentType.STRING, defaultValue: 'Meow' } } },
+                { opcode: 'stopAllSounds', blockType: BlockType.COMMAND, text: 'stop all sounds' },
+                { opcode: 'changeEffectBy', blockType: BlockType.COMMAND, text: 'change [EFFECT] effect by [VALUE]', arguments: { EFFECT: { type: ArgumentType.STRING, defaultValue: 'pitch' }, VALUE: { type: ArgumentType.NUMBER, defaultValue: 10 } } },
+                { opcode: 'setEffectTo', blockType: BlockType.COMMAND, text: 'set [EFFECT] effect to [VALUE]', arguments: { EFFECT: { type: ArgumentType.STRING, defaultValue: 'pitch' }, VALUE: { type: ArgumentType.NUMBER, defaultValue: 100 } } },
+                { opcode: 'clearEffects', blockType: BlockType.COMMAND, text: 'clear sound effects' },
+                { opcode: 'changeVolumeBy', blockType: BlockType.COMMAND, text: 'change volume by [VOLUME]', arguments: { VOLUME: { type: ArgumentType.NUMBER, defaultValue: -10 } } },
+                { opcode: 'setVolumeTo', blockType: BlockType.COMMAND, text: 'set volume to [VOLUME]%', arguments: { VOLUME: { type: ArgumentType.NUMBER, defaultValue: 100 } } },
+                { opcode: 'getVolume', blockType: BlockType.REPORTER, text: 'volume' },
+                
+                // Audio Synthesis & WebAudio Hacked Opcodes ⚡
+                { opcode: 'playNote', blockType: BlockType.COMMAND, text: 'play note [NOTE] for [SECS] secs', arguments: { NOTE: { type: ArgumentType.NUMBER, defaultValue: 60 }, SECS: { type: ArgumentType.NUMBER, defaultValue: 0.5 } } },
+                { opcode: 'setInstrument', blockType: BlockType.COMMAND, text: 'set instrument to [INST]', arguments: { INST: { type: ArgumentType.STRING, defaultValue: 'Piano' } } },
+                { opcode: 'setTempo', blockType: BlockType.COMMAND, text: 'set tempo to [BPM] bpm', arguments: { BPM: { type: ArgumentType.NUMBER, defaultValue: 120 } } },
+                { opcode: 'changeTempoBy', blockType: BlockType.COMMAND, text: 'change tempo by [BPM]', arguments: { BPM: { type: ArgumentType.NUMBER, defaultValue: 20 } } },
+                { opcode: 'getTempo', blockType: BlockType.REPORTER, text: 'tempo' },
+                
+                // Advanced Frequency & Filter Blocks 🎛️
+                { opcode: 'setPan', blockType: BlockType.COMMAND, text: 'set pan to [PAN]', arguments: { PAN: { type: ArgumentType.NUMBER, defaultValue: 0 } } },
+                { opcode: 'setLowpassCutoff', blockType: BlockType.COMMAND, text: 'set lowpass filter cutoff [FREQ] Hz', arguments: { FREQ: { type: ArgumentType.NUMBER, defaultValue: 1000 } } },
+                { opcode: 'setHighpassCutoff', blockType: BlockType.COMMAND, text: 'set highpass filter cutoff [FREQ] Hz', arguments: { FREQ: { type: ArgumentType.NUMBER, defaultValue: 500 } } },
+                { opcode: 'setReverb', blockType: BlockType.COMMAND, text: 'set reverb level [LEVEL]%', arguments: { LEVEL: { type: ArgumentType.NUMBER, defaultValue: 50 } } },
+                { opcode: 'setDistortion', blockType: BlockType.COMMAND, text: 'set distortion level [LEVEL]%', arguments: { LEVEL: { type: ArgumentType.NUMBER, defaultValue: 20 } } },
+                
+                // Audio Engine & Hardware Ingest 🎤
+                { opcode: 'getMicrophoneLoudness', blockType: BlockType.REPORTER, text: 'microphone loudness' },
+                { opcode: 'getAudioFrequency', blockType: BlockType.REPORTER, text: 'audio peak frequency (Hz)' },
+                { opcode: 'pauseSound', blockType: BlockType.COMMAND, text: 'pause sound [SOUND_MENU]', arguments: { SOUND_MENU: { type: ArgumentType.STRING, defaultValue: 'Meow' } } },
+                { opcode: 'resumeSound', blockType: BlockType.COMMAND, text: 'resume sound [SOUND_MENU]', arguments: { SOUND_MENU: { type: ArgumentType.STRING, defaultValue: 'Meow' } } },
+                { opcode: 'setPlaybackRate', blockType: BlockType.COMMAND, text: 'set sound speed to [SPEED]x', arguments: { SPEED: { type: ArgumentType.NUMBER, defaultValue: 1.0 } } },
+                { opcode: 'reverseSound', blockType: BlockType.COMMAND, text: 'reverse sound [SOUND_MENU]', arguments: { SOUND_MENU: { type: ArgumentType.STRING, defaultValue: 'Meow' } } },
+                { opcode: 'loopSound', blockType: BlockType.COMMAND, text: 'loop sound [SOUND_MENU] [STATE]', arguments: { SOUND_MENU: { type: ArgumentType.STRING, defaultValue: 'Meow' }, STATE: { type: ArgumentType.STRING, defaultValue: 'on' } } },
+                { opcode: 'getSoundDuration', blockType: BlockType.REPORTER, text: 'duration of sound [SOUND_MENU]', arguments: { SOUND_MENU: { type: ArgumentType.STRING, defaultValue: 'Meow' } } },
+                { opcode: 'isSoundPlaying', blockType: BlockType.BOOLEAN, text: 'is sound [SOUND_MENU] playing?', arguments: { SOUND_MENU: { type: ArgumentType.STRING, defaultValue: 'Meow' } } },
+                { opcode: 'muteSound', blockType: BlockType.COMMAND, text: 'mute audio output' },
+                { opcode: 'unmuteSound', blockType: BlockType.COMMAND, text: 'unmute audio output' }
+            ]
+        };
+    }
+}
+
+module.exports = Scratch3SoundExpanded;
+Blockly.BlockSvg.prototype.renderSoundHtml_ = function() {
+    if (this.soundHtml_) return;
+
+    if (this.type && this.type.startsWith('sound_')) {
+        const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+            'class': 'sound-html-overlay',
+            'x': 8,
+            'y': 0,
+            'width': this.width_ - 16,
+            'height': 40
+        }, this.svgGroup_);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'sound-html-wrapper';
+        wrapper.style.cssText = 'color: white; font-weight: bold; font-family: sans-serif; display: flex; align-items: center; gap: 6px;';
+        
+        wrapper.innerHTML = `<span>🔊 ${this.type.replace('sound_', '')}</span>`;
+        foreignObject.appendChild(wrapper);
+        this.soundHtml_ = foreignObject;
+    }
+};
+// scratch-blocks/core/colours.js
+Blockly.Colours.event = {
+    primary: "#EBB113",      // Warm Gold 🟡
+    secondary: "#C7950E",    // Accent border
+    tertiary: "#A37A0B"
+};
+Blockly.BlockSvg.prototype.renderEventHtml_ = function() {
+    if (this.eventHtml_) return;
+
+    if (this.type && this.type.startsWith('event_')) {
+        const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+            'class': 'event-html-overlay',
+            'x': 12,
+            'y': 4,
+            'width': this.width_ - 24,
+            'height': 36
+        }, this.svgGroup_);
+
+        const container = document.createElement('div');
+        container.style.cssText = 'color: #FFFFFF; font-weight: bold; font-family: sans-serif; display: flex; align-items: center; gap: 6px; font-size: 13px;';
+        container.innerHTML = `<span>⚡ ${this.type.replace('event_', '').replace(/_/g, ' ')}</span>`;
+        
+        foreignObject.appendChild(container);
+        this.eventHtml_ = foreignObject;
+    }
+};
+const BlockType = require('../../extension-support/block-type');
+const ArgumentType = require('../../extension-support/argument-type');
+
+class Scratch3EventsExpanded {
+    constructor (runtime) {
+        this.runtime = runtime;
+    }
+
+    getInfo () {
+        return {
+            id: 'event',
+            name: 'Events ⚡',
+            color1: '#EBB113',
+            color2: '#C7950E',
+            blocks: [
+                // Standard Hat Blocks
+                { opcode: 'whenflagclicked', blockType: BlockType.HAT, text: 'when clicked' },
+                { opcode: 'whenkeypressed', blockType: BlockType.HAT, text: 'when key [KEY_OPTION] pressed', arguments: { KEY_OPTION: { type: ArgumentType.STRING, defaultValue: 'space' } } },
+                { opcode: 'whenkeyreleased', blockType: BlockType.HAT, text: 'when key [KEY_OPTION] released', arguments: { KEY_OPTION: { type: ArgumentType.STRING, defaultValue: 'space' } } },
+                { opcode: 'whenthisspriteclicked', blockType: BlockType.HAT, text: 'when this sprite clicked' },
+                { opcode: 'whenthispritedoubleclicked', blockType: BlockType.HAT, text: 'when this sprite double clicked' },
+                { opcode: 'whenmouseenter', blockType: BlockType.HAT, text: 'when mouse enters sprite' },
+                { opcode: 'whenmouseleave', blockType: BlockType.HAT, text: 'when mouse leaves sprite' },
+                { opcode: 'whenbackdropswitchestocustom', blockType: BlockType.HAT, text: 'when backdrop switches to [BACKDROP]', arguments: { BACKDROP: { type: ArgumentType.STRING, defaultValue: 'backdrop1' } } },
+                { opcode: 'whengreaterthan', blockType: BlockType.HAT, text: 'when [MENU] > [VALUE]', arguments: { MENU: { type: ArgumentType.STRING, defaultValue: 'loudness' }, VALUE: { type: ArgumentType.NUMBER, defaultValue: 10 } } },
+                
+                // Broadcasters & Custom Channels 📢
+                { opcode: 'whenbroadcastreceived', blockType: BlockType.HAT, text: 'when I receive [BROADCAST_OPTION]', arguments: { BROADCAST_OPTION: { type: ArgumentType.STRING, defaultValue: 'message1' } } },
+                { opcode: 'broadcast', blockType: BlockType.COMMAND, text: 'broadcast [BROADCAST_OPTION]', arguments: { BROADCAST_OPTION: { type: ArgumentType.STRING, defaultValue: 'message1' } } },
+                { opcode: 'broadcastandwait', blockType: BlockType.COMMAND, text: 'broadcast [BROADCAST_OPTION] and wait', arguments: { BROADCAST_OPTION: { type: ArgumentType.STRING, defaultValue: 'message1' } } },
+                { opcode: 'broadcastwithdata', blockType: BlockType.COMMAND, text: 'broadcast [BROADCAST_OPTION] with data [DATA]', arguments: { BROADCAST_OPTION: { type: ArgumentType.STRING, defaultValue: 'message1' }, DATA: { type: ArgumentType.STRING, defaultValue: '{"status":200}' } } },
+                { opcode: 'whenbroadcastreceivedwithdata', blockType: BlockType.HAT, text: 'when I receive [BROADCAST_OPTION] with data', arguments: { BROADCAST_OPTION: { type: ArgumentType.STRING, defaultValue: 'message1' } } },
+                { opcode: 'getlastbroadcastdata', blockType: BlockType.REPORTER, text: 'event data payload' }
+            ]
+        };
+    }
+}
+
+module.exports = Scratch3EventsExpanded;
+// scratch-blocks/core/colours.js
+Blockly.Colours.control = {
+    primary: "#FF9B1A",      // Exact Orange 🟧
+    secondary: "#E0820D",    // Accent border
+    tertiary: "#B86805"
+};
+const BlockType = require('../../extension-support/block-type');
+const ArgumentType = require('../../extension-support/argument-type');
+
+class Scratch3ControlExpanded {
+    constructor (runtime) {
+        this.runtime = runtime;
+    }
+
+    getInfo () {
+        return {
+            id: 'control',
+            name: 'Control 🎛️',
+            color1: '#FF9B1A',
+            color2: '#E0820D',
+            blocks: [
+                // Standard Control Blocks
+                { opcode: 'wait', blockType: BlockType.COMMAND, text: 'wait [DURATION] seconds', arguments: { DURATION: { type: ArgumentType.NUMBER, defaultValue: 1 } } },
+                { opcode: 'repeat', blockType: BlockType.LOOP, text: 'repeat [TIMES]', arguments: { TIMES: { type: ArgumentType.NUMBER, defaultValue: 10 } } },
+                { opcode: 'forever', blockType: BlockType.LOOP, text: 'forever' },
+                { opcode: 'if', blockType: BlockType.CONDITIONAL, text: 'if [CONDITION] then' },
+                { opcode: 'ifElse', blockType: BlockType.CONDITIONAL, text: 'if [CONDITION] then ... else' },
+                { opcode: 'waitUntil', blockType: BlockType.COMMAND, text: 'wait until [CONDITION]' },
+                { opcode: 'repeatUntil', blockType: BlockType.LOOP, text: 'repeat until [CONDITION]' },
+                { opcode: 'stop', blockType: BlockType.COMMAND, text: 'stop [OPTION]', arguments: { OPTION: { type: ArgumentType.STRING, defaultValue: 'all' } } },
+                { opcode: 'startAsClone', blockType: BlockType.HAT, text: 'when I start as a clone' },
+                { opcode: 'createClone', blockType: BlockType.COMMAND, text: 'create clone of [CLONE_OPTION]', arguments: { CLONE_OPTION: { type: ArgumentType.STRING, defaultValue: '_myself_' } } },
+                { opcode: 'deleteClone', blockType: BlockType.COMMAND, text: 'delete this clone' },
+
+                // ChinaBlocks High-Power Extensions 🚀
+                { opcode: 'whileLoop', blockType: BlockType.LOOP, text: 'while [CONDITION]', arguments: { CONDITION: { type: ArgumentType.BOOLEAN } } },
+                { opcode: 'forLoop', blockType: BlockType.LOOP, text: 'for [VAR] from [START] to [END]', arguments: { VAR: { type: ArgumentType.STRING, defaultValue: 'i' }, START: { type: ArgumentType.NUMBER, defaultValue: 1 }, END: { type: ArgumentType.NUMBER, defaultValue: 10 } } },
+                { opcode: 'breakLoop', blockType: BlockType.COMMAND, text: 'break out of loop' },
+                { opcode: 'continueLoop', blockType: BlockType.COMMAND, text: 'continue next iteration' },
+                { opcode: 'tryCatch', blockType: BlockType.CONDITIONAL, text: 'try ... catch error [ERR_VAR]', arguments: { ERR_VAR: { type: ArgumentType.STRING, defaultValue: 'error' } } }
+            ]
+        };
+    }
+}
+
+module.exports = Scratch3ControlExpanded;
+Blockly.BlockSvg.prototype.renderControlHtml_ = function() {
+    if (this.controlHtml_) return;
+
+    if (this.type && this.type.startsWith('control_')) {
+        const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+            'class': 'control-html-overlay',
+            'x': 8,
+            'y': 2,
+            'width': this.width_ - 16,
+            'height': 30
+        }, this.svgGroup_);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'color: white; font-weight: bold; font-family: sans-serif; display: flex; align-items: center; gap: 6px; font-size: 13px;';
+        wrapper.innerHTML = `<span>🎛️ ${this.type.replace('control_', '')}</span>`;
+        
+        foreignObject.appendChild(wrapper);
+        this.controlHtml_ = foreignObject;
+    }
+};
+const BlockType = require('../../extension-support/block-type');
+const ArgumentType = require('../../extension-support/argument-type');
+
+class Scratch3SensingExpanded {
+    constructor (runtime) {
+        this.runtime = runtime;
+    }
+
+    getInfo () {
+        return {
+            id: 'sensing',
+            name: 'Sensing 💎',
+            color1: '#40B5D0',
+            color2: '#2E97AF',
+            blocks: [
+                // Standard Sensing Blocks
+                { opcode: 'touchingobject', blockType: BlockType.BOOLEAN, text: 'touching [TOUCHINGOBJECTMENU]?', arguments: { TOUCHINGOBJECTMENU: { type: ArgumentType.STRING, defaultValue: '_mouse_' } } },
+                { opcode: 'touchingcolor', blockType: BlockType.BOOLEAN, text: 'touching color [COLOR]?', arguments: { COLOR: { type: ArgumentType.COLOR } } },
+                { opcode: 'coloristouchingcolor', blockType: BlockType.BOOLEAN, text: 'color [COLOR1] is touching [COLOR2]?', arguments: { COLOR1: { type: ArgumentType.COLOR }, COLOR2: { type: ArgumentType.COLOR } } },
+                { opcode: 'distanceTo', blockType: BlockType.REPORTER, text: 'distance to [DISTANCETOMENU]', arguments: { DISTANCETOMENU: { type: ArgumentType.STRING, defaultValue: '_mouse_' } } },
+                { opcode: 'askandwait', blockType: BlockType.COMMAND, text: 'ask [QUESTION] and wait', arguments: { QUESTION: { type: ArgumentType.STRING, defaultValue: 'What is your name?' } } },
+                { opcode: 'answer', blockType: BlockType.REPORTER, text: 'answer' },
+                { opcode: 'keypressed', blockType: BlockType.BOOLEAN, text: 'key [KEY_OPTION] pressed?', arguments: { KEY_OPTION: { type: ArgumentType.STRING, defaultValue: 'space' } } },
+                { opcode: 'mousedown', blockType: BlockType.BOOLEAN, text: 'mouse down?' },
+                { opcode: 'mousex', blockType: BlockType.REPORTER, text: 'mouse x' },
+                { opcode: 'mousey', blockType: BlockType.REPORTER, text: 'mouse y' },
+                { opcode: 'loudness', blockType: BlockType.REPORTER, text: 'loudness' },
+                { opcode: 'timer', blockType: BlockType.REPORTER, text: 'timer' },
+                { opcode: 'resettimer', blockType: BlockType.COMMAND, text: 'reset timer' },
+                { opcode: 'of', blockType: BlockType.REPORTER, text: '[PROPERTY] of [OBJECT]', arguments: { PROPERTY: { type: ArgumentType.STRING, defaultValue: 'x position' }, OBJECT: { type: ArgumentType.STRING, defaultValue: 'Sprite1' } } },
+                { opcode: 'current', blockType: BlockType.REPORTER, text: 'current [CURRENTMENU]', arguments: { CURRENTMENU: { type: ArgumentType.STRING, defaultValue: 'year' } } },
+                { opcode: 'dayssince2000', blockType: BlockType.REPORTER, text: 'days since 2000' },
+                { opcode: 'username', blockType: BlockType.REPORTER, text: 'username' },
+
+                // ChinaBlocks High-Power Hardware & Input Additions 🚀
+                { opcode: 'isRightMouseDown', blockType: BlockType.BOOLEAN, text: 'right mouse down?' },
+                { opcode: 'getScrollDeltaY', blockType: BlockType.REPORTER, text: 'mouse wheel scroll Y' },
+                { opcode: 'isHoveringSprite', blockType: BlockType.BOOLEAN, text: 'is mouse hovering over sprite?' },
+                { opcode: 'getCanvasWidth', blockType: BlockType.REPORTER, text: 'stage viewport width' },
+                { opcode: 'getCanvasHeight', blockType: BlockType.REPORTER, text: 'stage viewport height' },
+                { opcode: 'isWindowFocused', blockType: BlockType.BOOLEAN, text: 'browser tab focused?' },
+                { opcode: 'getBatteryLevel', blockType: BlockType.REPORTER, text: 'device battery level %' }
+            ]
+        };
+    }
+}
+
+module.exports = Scratch3SensingExpanded;
+Blockly.BlockSvg.prototype.renderSensingHtml_ = function() {
+    if (this.sensingHtml_) return;
+
+    if (this.type && this.type.startsWith('sensing_')) {
+        const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+            'class': 'sensing-html-overlay',
+            'x': 10,
+            'y': 2,
+            'width': this.width_ - 20,
+            'height': 30
+        }, this.svgGroup_);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'color: white; font-weight: bold; font-family: sans-serif; display: flex; align-items: center; gap: 6px; font-size: 13px;';
+        wrapper.innerHTML = `<span>💎 ${this.type.replace('sensing_', '')}</span>`;
+        
+        foreignObject.appendChild(wrapper);
+        this.sensingHtml_ = foreignObject;
+    }
+};
+yo wtf
+// scratch-blocks/core/colours.js
+Blockly.Colours.operators = {
+    primary: "#42C054",      // Exact Bright Green 🟩
+    secondary: "#349E43",    // Darker accent
+    tertiary: "#267A32"
+};
+const BlockType = require('../../extension-support/block-type');
+const ArgumentType = require('../../extension-support/argument-type');
+
+class Scratch3OperatorsExpanded {
+    constructor (runtime) {
+        this.runtime = runtime;
+    }
+
+    getInfo () {
+        return {
+            id: 'operator',
+            name: 'Operators 🟩',
+            color1: '#42C054',
+            color2: '#349E43',
+            blocks: [
+                // Standard Arithmetic & Logic
+                { opcode: 'add', blockType: BlockType.REPORTER, text: '[NUM1] + [NUM2]', arguments: { NUM1: { type: ArgumentType.NUMBER }, NUM2: { type: ArgumentType.NUMBER } } },
+                { opcode: 'subtract', blockType: BlockType.REPORTER, text: '[NUM1] - [NUM2]', arguments: { NUM1: { type: ArgumentType.NUMBER }, NUM2: { type: ArgumentType.NUMBER } } },
+                { opcode: 'multiply', blockType: BlockType.REPORTER, text: '[NUM1] * [NUM2]', arguments: { NUM1: { type: ArgumentType.NUMBER }, NUM2: { type: ArgumentType.NUMBER } } },
+                { opcode: 'divide', blockType: BlockType.REPORTER, text: '[NUM1] / [NUM2]', arguments: { NUM1: { type: ArgumentType.NUMBER }, NUM2: { type: ArgumentType.NUMBER } } },
+                { opcode: 'random', blockType: BlockType.REPORTER, text: 'pick random [FROM] to [TO]', arguments: { FROM: { type: ArgumentType.NUMBER, defaultValue: 1 }, TO: { type: ArgumentType.NUMBER, defaultValue: 10 } } },
+                { opcode: 'gt', blockType: BlockType.BOOLEAN, text: '[OPERAND1] > [OPERAND2]' },
+                { opcode: 'lt', blockType: BlockType.BOOLEAN, text: '[OPERAND1] < [OPERAND2]' },
+                { opcode: 'equals', blockType: BlockType.BOOLEAN, text: '[OPERAND1] = [OPERAND2]' },
+                { opcode: 'and', blockType: BlockType.BOOLEAN, text: '[OPERAND1] and [OPERAND2]' },
+                { opcode: 'or', blockType: BlockType.BOOLEAN, text: '[OPERAND1] or [OPERAND2]' },
+                { opcode: 'not', blockType: BlockType.BOOLEAN, text: 'not [OPERAND]' },
+                
+                // Advanced Math & Strings
+                { opcode: 'join', blockType: BlockType.REPORTER, text: 'join [STRING1] [STRING2]', arguments: { STRING1: { type: ArgumentType.STRING, defaultValue: 'apple ' }, STRING2: { type: ArgumentType.STRING, defaultValue: 'banana' } } },
+                { opcode: 'letterOf', blockType: BlockType.REPORTER, text: 'letter [LETTER] of [STRING]', arguments: { LETTER: { type: ArgumentType.NUMBER, defaultValue: 1 }, STRING: { type: ArgumentType.STRING, defaultValue: 'apple' } } },
+                { opcode: 'length', blockType: BlockType.REPORTER, text: 'length of [STRING]', arguments: { STRING: { type: ArgumentType.STRING, defaultValue: 'apple' } } },
+                { opcode: 'contains', blockType: BlockType.BOOLEAN, text: '[STRING1] contains [STRING2]?' },
+                { opcode: 'mod', blockType: BlockType.REPORTER, text: '[NUM1] mod [NUM2]' },
+                { opcode: 'round', blockType: BlockType.REPORTER, text: 'round [NUM]' },
+                { opcode: 'mathop', blockType: BlockType.REPORTER, text: '[OPERATOR] of [NUM]', arguments: { OPERATOR: { type: ArgumentType.STRING, defaultValue: 'abs' } } },
+
+                // ChinaBlocks High-Power Math & String Expansion 🚀
+                { opcode: 'power', blockType: BlockType.REPORTER, text: '[BASE] ^ [EXPONENT]', arguments: { BASE: { type: ArgumentType.NUMBER, defaultValue: 2 }, EXPONENT: { type: ArgumentType.NUMBER, defaultValue: 8 } } },
+                { opcode: 'clamp', blockType: BlockType.REPORTER, text: 'clamp [VAL] between [MIN] and [MAX]', arguments: { VAL: { type: ArgumentType.NUMBER, defaultValue: 50 }, MIN: { type: ArgumentType.NUMBER, defaultValue: 0 }, MAX: { type: ArgumentType.NUMBER, defaultValue: 100 } } },
+                { opcode: 'replaceString', blockType: BlockType.REPORTER, text: 'in [STR] replace [TARGET] with [REPLACEMENT]', arguments: { STR: { type: ArgumentType.STRING, defaultValue: 'hello world' }, TARGET: { type: ArgumentType.STRING, defaultValue: 'world' }, REPLACEMENT: { type: ArgumentType.STRING, defaultValue: 'ChinaBlocks' } } },
+                { opcode: 'regexMatch', blockType: BlockType.BOOLEAN, text: 'text [STR] matches regex [REGEX]', arguments: { STR: { type: ArgumentType.STRING, defaultValue: '123' }, REGEX: { type: ArgumentType.STRING, defaultValue: '^[0-9]+$' } } },
+                { opcode: 'bitwiseAnd', blockType: BlockType.REPORTER, text: '[A] & [B]', arguments: { A: { type: ArgumentType.NUMBER, defaultValue: 5 }, B: { type: ArgumentType.NUMBER, defaultValue: 3 } } },
+                { opcode: 'bitwiseOr', blockType: BlockType.REPORTER, text: '[A] | [B]', arguments: { A: { type: ArgumentType.NUMBER, defaultValue: 5 }, B: { type: ArgumentType.NUMBER, defaultValue: 3 } } }
+            ]
+        };
+    }
+}
+
+module.exports = Scratch3OperatorsExpanded;
+Blockly.BlockSvg.prototype.renderOperatorsHtml_ = function() {
+    if (this.operatorsHtml_) return;
+
+    if (this.type && this.type.startsWith('operator_')) {
+        const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+            'class': 'operators-html-overlay',
+            'x': 8,
+            'y': 2,
+            'width': this.width_ - 16,
+            'height': 30
+        }, this.svgGroup_);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'color: white; font-weight: bold; font-family: sans-serif; display: flex; align-items: center; gap: 4px; font-size: 13px;';
+        wrapper.innerHTML = `<span>🟩 ${this.type.replace('operator_', '')}</span>`;
+        
+        foreignObject.appendChild(wrapper);
+        this.operatorsHtml_ = foreignObject;
+    }
+};
+// scratch-blocks/core/colours.js
+Blockly.Colours.variables = {
+    primary: "#FF841A",      // Exact Tangerine Orange 🍊
+    secondary: "#E06D0B",    // Accent border
+    tertiary: "#B85505"
+};
+
+Blockly.Colours.data_lists = {
+    primary: "#FF841A",      // Keep list blocks matched to tangerine
+    secondary: "#E06D0B",
+    tertiary: "#B85505"
+};
+const BlockType = require('../../extension-support/block-type');
+const ArgumentType = require('../../extension-support/argument-type');
+
+class Scratch3VariablesExpanded {
+    constructor (runtime) {
+        this.runtime = runtime;
+        this.globalStore = new Map();
+    }
+
+    getInfo () {
+        return {
+            id: 'data',
+            name: 'Variables 🍊',
+            color1: '#FF841A',
+            color2: '#E06D0B',
+            blocks: [
+                // Standard Scratch Variables & Lists
+                { opcode: 'setvariableto', blockType: BlockType.COMMAND, text: 'set [VARIABLE] to [VALUE]', arguments: { VARIABLE: { type: ArgumentType.STRING, defaultValue: 'my variable' }, VALUE: { type: ArgumentType.STRING, defaultValue: '0' } } },
+                { opcode: 'changevariableby', blockType: BlockType.COMMAND, text: 'change [VARIABLE] by [VALUE]', arguments: { VARIABLE: { type: ArgumentType.STRING, defaultValue: 'my variable' }, VALUE: { type: ArgumentType.NUMBER, defaultValue: 1 } } },
+                { opcode: 'showvariable', blockType: BlockType.COMMAND, text: 'show variable [VARIABLE]', arguments: { VARIABLE: { type: ArgumentType.STRING, defaultValue: 'my variable' } } },
+                { opcode: 'hidevariable', blockType: BlockType.COMMAND, text: 'hide variable [VARIABLE]', arguments: { VARIABLE: { type: ArgumentType.STRING, defaultValue: 'my variable' } } },
+                
+                // ChinaBlocks Array & Matrix Power Blocks 🚀
+                { opcode: 'createArray', blockType: BlockType.COMMAND, text: 'create array [NAME] with items [ITEMS]', arguments: { NAME: { type: ArgumentType.STRING, defaultValue: 'list' }, ITEMS: { type: ArgumentType.STRING, defaultValue: 'a,b,c' } } },
+                { opcode: 'pushToArray', blockType: BlockType.COMMAND, text: 'push [ITEM] to array [NAME]', arguments: { ITEM: { type: ArgumentType.STRING, defaultValue: 'item' }, NAME: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'popFromArray', blockType: BlockType.REPORTER, text: 'pop item from array [NAME]', arguments: { NAME: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'getArrayLength', blockType: BlockType.REPORTER, text: 'length of array [NAME]', arguments: { NAME: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'sortArray', blockType: BlockType.COMMAND, text: 'sort array [NAME] [ORDER]', arguments: { NAME: { type: ArgumentType.STRING, defaultValue: 'list' }, ORDER: { type: ArgumentType.STRING, defaultValue: 'ascending' } } },
+                { opcode: 'arrayContains', blockType: BlockType.BOOLEAN, text: 'array [NAME] contains [ITEM]?', arguments: { NAME: { type: ArgumentType.STRING, defaultValue: 'list' }, ITEM: { type: ArgumentType.STRING, defaultValue: 'a' } } }
+            ]
+        };
+    }
+}
+
+module.exports = Scratch3VariablesExpanded;
+Blockly.BlockSvg.prototype.renderVariablesHtml_ = function() {
+    if (this.variablesHtml_) return;
+
+    if (this.type && (this.type.startsWith('data_') || this.type.startsWith('variable_'))) {
+        const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+            'class': 'variables-html-overlay',
+            'x': 8,
+            'y': 2,
+            'width': this.width_ - 16,
+            'height': 30
+        }, this.svgGroup_);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'color: white; font-weight: bold; font-family: sans-serif; display: flex; align-items: center; gap: 4px; font-size: 13px;';
+        wrapper.innerHTML = `<span>🍊 ${this.type.replace('data_', '').replace('variable_', '')}</span>`;
+        
+        foreignObject.appendChild(wrapper);
+        this.variablesHtml_ = foreignObject;
+    }
+};
+// scratch-blocks/core/colours.js
+Blockly.Colours.data_lists = {
+    primary: "#FF3355",      // Bold Red 🔴
+    secondary: "#D62242",    // Darker red border
+    tertiary: "#AD122F"
+};
+const BlockType = require('../../extension-support/block-type');
+const ArgumentType = require('../../extension-support/argument-type');
+
+class Scratch3ListsExpanded {
+    constructor (runtime) {
+        this.runtime = runtime;
+    }
+
+    getInfo () {
+        return {
+            id: 'lists',
+            name: 'Lists 🔴',
+            color1: '#FF3355',
+            color2: '#D62242',
+            blocks: [
+                // Standard Scratch List Blocks
+                { opcode: 'addToList', blockType: BlockType.COMMAND, text: 'add [ITEM] to [LIST]', arguments: { ITEM: { type: ArgumentType.STRING, defaultValue: 'thing' }, LIST: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'deleteOfList', blockType: BlockType.COMMAND, text: 'delete [INDEX] of [LIST]', arguments: { INDEX: { type: ArgumentType.NUMBER, defaultValue: 1 }, LIST: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'deleteAllOfList', blockType: BlockType.COMMAND, text: 'delete all of [LIST]', arguments: { LIST: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'insertAtList', blockType: BlockType.COMMAND, text: 'insert [ITEM] at [INDEX] of [LIST]', arguments: { ITEM: { type: ArgumentType.STRING, defaultValue: 'thing' }, INDEX: { type: ArgumentType.NUMBER, defaultValue: 1 }, LIST: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'replaceItemOfList', blockType: BlockType.COMMAND, text: 'replace item [INDEX] of [LIST] with [ITEM]', arguments: { INDEX: { type: ArgumentType.NUMBER, defaultValue: 1 }, LIST: { type: ArgumentType.STRING, defaultValue: 'list' }, ITEM: { type: ArgumentType.STRING, defaultValue: 'thing' } } },
+                { opcode: 'itemOfList', blockType: BlockType.REPORTER, text: 'item [INDEX] of [LIST]', arguments: { INDEX: { type: ArgumentType.NUMBER, defaultValue: 1 }, LIST: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'lengthOfList', blockType: BlockType.REPORTER, text: 'length of [LIST]', arguments: { LIST: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'listContainsItem', blockType: BlockType.BOOLEAN, text: '[LIST] contains [ITEM]?', arguments: { LIST: { type: ArgumentType.STRING, defaultValue: 'list' }, ITEM: { type: ArgumentType.STRING, defaultValue: 'thing' } } },
+
+                // ChinaBlocks Advanced Array & Queue Operations 🚀
+                { opcode: 'reverseList', blockType: BlockType.COMMAND, text: 'reverse list [LIST]', arguments: { LIST: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'shuffleList', blockType: BlockType.COMMAND, text: 'randomize order of [LIST]', arguments: { LIST: { type: ArgumentType.STRING, defaultValue: 'list' } } },
+                { opcode: 'joinListWithSeparator', blockType: BlockType.REPORTER, text: 'join [LIST] as text with separator [SEP]', arguments: { LIST: { type: ArgumentType.STRING, defaultValue: 'list' }, SEP: { type: ArgumentType.STRING, defaultValue: ', ' } } },
+                { opcode: 'sliceList', blockType: BlockType.COMMAND, text: 'copy items from [START] to [END] from [LIST1] into [LIST2]', arguments: { START: { type: ArgumentType.NUMBER, defaultValue: 1 }, END: { type: ArgumentType.NUMBER, defaultValue: 5 }, LIST1: { type: ArgumentType.STRING, defaultValue: 'list1' }, LIST2: { type: ArgumentType.STRING, defaultValue: 'list2' } } }
+            ]
+        };
+    }
+}
+
+module.exports = Scratch3ListsExpanded;
+Blockly.BlockSvg.prototype.renderListsHtml_ = function() {
+    if (this.listsHtml_) return;
+
+    if (this.type && (this.type.startsWith('lists_') || this.type.startsWith('data_list'))) {
+        const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+            'class': 'lists-html-overlay',
+            'x': 8,
+            'y': 2,
+            'width': this.width_ - 16,
+            'height': 30
+        }, this.svgGroup_);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'color: white; font-weight: bold; font-family: sans-serif; display: flex; align-items: center; gap: 4px; font-size: 13px;';
+        wrapper.innerHTML = `<span>🔴 ${this.type.replace('lists_', '').replace('data_list', '')}</span>`;
+        
+        foreignObject.appendChild(wrapper);
+        this.listsHtml_ = foreignObject;
+    }
+};
+// scratch-gui/src/lib/make-toolbox-xml.js (FORKED)
+
+const myBlocks = function (isInitialSetup) {
+    return `
+        <category name="My Blocks 🌺" id="myBlocks" colour="#E6436E" secondaryColour="#C42D55">
+            <!-- Default Pre-Built Procedure 1: Lerp / Smooth Movement -->
+            <block type="procedures_call">
+                <mutation proccode="smooth move to x: %n y: %n speed: %n" argumentnames='["targetX","targetY","speed"]' argumentdefaults='[100,100,0.2]' warp="true"/>
+            </block>
+            
+            <!-- Default Pre-Built Procedure 2: Custom Bounce Effect -->
+            <block type="procedures_call">
+                <mutation proccode="squish bounce scale: %n" argumentnames='["factor"]' argumentdefaults='[120]' warp="false"/>
+            </block>
+
+            <!-- Default Pre-Built Procedure 3: Print Debug Console -->
+            <block type="procedures_call">
+                <mutation proccode="log to console %s" argumentnames='["text"]' argumentdefaults='["Hello ChinaBlocks!"]' warp="true"/>
+            </block>
+
+            <button text="Make a Block!!!// scratch-vm/src/engine/target.js (Pre-loaded procedure definitions)
+
+const injectDefaultMyBlocks = function (spriteTarget) {
+    const blocks = spriteTarget.blocks;
+
+    // 1. Define "smooth move to x: y: speed:"
+    blocks.createBlock({
+        id: 'default_proc_lerp',
+        opcode: 'procedures_definition',
+        inputs: {
+            custom_block: [1, 'default_proc_lerp_prototype']
+        },
+        topLevel: true,
+        x: 200,
+        y: 200
+    });
+
+    blocks.createBlock({
+        id: 'default_proc_lerp_prototype',
+        opcode: 'procedures_prototype',
+        mutation: {
+            tagName: 'mutation',
+            proccode: 'smooth move to x: %n y: %n speed: %n',
+            argumentnames: JSON.stringify(["targetX", "targetY", "speed"]),
+            argumentdefaults: JSON.stringify([100, 100, 0.2]),
+            warp: "true"
+        },
+        shadow: true
+    });
+};
+" callbackKey="MAKE_A_PROCEDURE"></button>
+        </category>
+    `;
+};
+// scratch-gui/src/components/custom-procedures/custom-procedures.jsx (HACKED)
+import React from 'react';
+import { HexColorPicker } from 'react-colorful'; // Custom color wheel import
+
+const CustomProceduresModal = (props) => {
+    const [blockColor, setBlockColor] = React.useState('#E6436E'); // Default Crimson 🌺
+
+    const handleApplyColor = (color) => {
+        setBlockColor(color);
+        // Pass selected custom hex color back to the scratch-blocks mutation engine
+        if (props.onColorChange) {
+            props.onColorChange(color);
+        }
+    };
+
+    return (
+        <div className="custom-procedure-modal">
+            <h2>Make a Block 🌺</h2>
+            
+            {/* Standard Block Name Input */}
+            <input 
+                type="text" 
+                placeholder="block name" 
+                onChange={props.onChangeProcCode} 
+            />
+
+            {/* NEW: Custom Hex Color Palette Picker */}
+            <div className="color-picker-section">
+                <label>Custom Block Color:</label>
+                <input 
+                    type="color" 
+                    value={blockColor} 
+                    onChange={(e) => handleApplyColor(e.target.value)} 
+                />
+                <span style={{ color: blockColor, fontWeight: 'bold' }}>{blockColor}</span>
+            </div>
+
+            {/* Modal Buttons */}
+            <button onClick={() => props.onOk(blockColor)}>OK</button>
+        </div>
+    );
+};
+// scratch-blocks/core/procedures.js (HACKED MUTATOR)
+
+Blockly.Blocks['procedures_definition'].updateCustomColor = function(customHex) {
+    if (!customHex) return;
+
+    // Override the default pink fill on this specific custom procedure instance
+    this.setColour(customHex, customHex, customHex);
+    
+    // Save color to block mutation XML payload so it persists in project saves!
+    this.mutationData_ = this.mutationData_ || {};
+    this.mutationData_.customColor = customHex;
+};
+
+// Intercept procedure mutation deserialization during project load
+Blockly.Blocks['procedures_definition'].domToMutation = function(xmlElement) {
+    const customHex = xmlElement.getAttribute('customcolor');
+    if (customHex) {
+        this.setColour(customHex, customHex, customHex);
+    }
+};
+Blockly.BlockSvg.prototype.renderCustomProcedureHtml_ = function() {
+    if (this.customProcHtml_) return;
+
+    if (this.type === 'procedures_call' || this.type === 'procedures_definition') {
+        const customColor = this.getColour() || '#E6436E';
+
+        const foreignObject = Blockly.utils.dom.createSvgElement('foreignObject', {
+            'class': 'custom-proc-overlay',
+            'x': 8,
+            'y': 2,
+            'width': this.width_ - 16,
+            'height': 30
+        }, this.svgGroup_);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `color: white; font-weight: bold; font-family: sans-serif; display: flex; align-items: center; gap: 6px; font-size: 13px; background: ${customColor}; border-radius: 4px; padding: 2px 6px;`;
+        wrapper.innerHTML = `<span>🎨 ${this.getProcCode ? this.getProcCode() : 'custom block'}</span>`;
+        
+        foreignObject.appendChild(wrapper);
+        this.customProcHtml_ = foreignObject;
+    }
+};
+// scratch-gui/src/components/menu-bar/menu-bar.jsx
+import React from 'react';
+import classNames from 'classnames';
+import styles from './menu-bar.css';
+
+// Import dropdown components or icons as needed
+import languageIcon from './icon--language.svg';
+
+const MenuBar = props => (
+    <div className={styles.menuBar}>
+        {/* Logo / Mascot Section */}
+        <div className={styles.mainMenu}>
+            <div className={classNames(styles.menuBarItem, styles.hoverable)}>
+                <span className={styles.logoText}>ChinaBlocks 🇨🇳</span>
+            </div>
+
+            {/* 1. FILE MENU */}
+            <div className={classNames(styles.menuBarItem, styles.hoverable)}>
+                <span className={styles.collapsibleLabel}>File</span>
+                {/* File Dropdown Logic (New, Save, Load .chinablocks1) */}
+            </div>
+
+            {/* 2. EDIT MENU */}
+            <div className={classNames(styles.menuBarItem, styles.hoverable)}>
+                <span className={styles.collapsibleLabel}>Edit</span>
+                {/* Edit Dropdown Logic (Undo, Redo, Turbo Mode) */}
+            </div>
+
+            {/* 3. SETTINGS MENU */}
+            <div className={classNames(styles.menuBarItem, styles.hoverable)}>
+                <span className={styles.collapsibleLabel}>Settings</span>
+                {/* Settings Dropdown Logic (Dark Theme, Grid Snapping) */}
+            </div>
+
+            {/* 4. ADDONS MENU (Links directly to addon.html / clean /addon path) */}
+            <div 
+                className={classNames(styles.menuBarItem, styles.hoverable, styles.addonButton)}
+                onClick={() => { window.location.href = '/addon.html'; }}
+            >
+                <span className={styles.collapsibleLabel}>🧩 Addons</span>
+            </div>
+        </div>
+
+        {/* Right-side Account / Extension controls */}
+        <div className={styles.accountInfoGroup}>
+            <button className={styles.communityButton}>Share Project</button>
+        </div>
+    </div>
+);
+
+export default MenuBar;
+/* scratch-gui/src/components/menu-bar/menu-bar.css */
+
+.menuBar {
+    height: 3rem;
+    background-color: #2C3E50; /* Dark slate matching Formatbone theme */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.logoText {
+    font-weight: bold;
+    color: #FFFFFF;
+    font-size: 1.1rem;
+    margin-right: 1rem;
+}
+
+.menuBarItem {
+    color: #FFFFFF;
+    font-weight: 500;
+    font-size: 0.85rem;
+    padding: 0 0.75rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.menuBarItem:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Custom Highlight for the Addons Link */
+.addonButton {
+    background-color: #8A52ED; /* Matching Purple theme */
+    border-radius: 4px;
+    height: 2.2rem;
+    margin-left: 0.5rem;
+}
+
+.addonButton:hover {
+    background-color: #7539D8;
+}
+# 1. Clone your scratch-addons fork
+git clone https://github.com/ScratchAddons/ScratchAddons.git scratch-addons-fork
+cd scratch-addons-fork
+
+# 2. Build the web version of addons page
+npm install
+npm run build
+
+# 3. Copy built addon page assets to scratch-gui static directory
+cp -r build/* ../scratch-gui/static/
+# 1. Clone your scratch-addons fork
+git clone https://github.com/ScratchAddons/ScratchAddons.git scratch-addons-fork
+cd scratch-addons-fork
+
+# 2. Build the web version of addons page
+npm install
+npm run build
+
+# 3. Copy built addon page assets to scratch-gui static directory
+cp -r build/* ../scratch-gui/static/
