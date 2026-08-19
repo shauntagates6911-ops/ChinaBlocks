@@ -1,0 +1,56 @@
+version: 2.1
+
+executors:
+  node-executor:
+    docker:
+      # Node 18+ container for building scratch-gui / scratch-vm forks
+      - image: cimg/node:18.18.0
+    working_directory: ~/chinablocks-gui
+
+jobs:
+  build-and-test:
+    executor: node-executor
+    steps:
+      - checkout
+
+      # 1. Restore cached node_modules to keep CI fast ⚡
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package-lock.json" }}
+            - v1-dependencies-
+
+      # 2. Install dependencies using fast NPM ci
+      - run:
+          name: Install ChinaBlocks Dependencies 📦
+          command: |
+            npm ci
+
+      # 3. Save dependency cache
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package-lock.json" }}
+
+      # 4. Run Linter & Tests for Custom Block VM Opcodes 🧪
+      - run:
+          name: Run Linter and Unit Tests
+          command: |
+            npm run lint
+            npm test
+
+      # 5. Compile production build (Bundles scratch-gui + custom VM) 🚀
+      - run:
+          name: Build Production Engine
+          command: |
+            NODE_ENV=production npm run build
+
+      # 6. Store build artifacts (The generated static editor site)
+      - store_artifacts:
+          path: build
+          destination: chinablocks-editor-build
+
+workflows:
+  version: 2
+  chinablocks-pipeline:
+    jobs:
+      - build-and-test
