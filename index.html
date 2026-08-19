@@ -1,0 +1,74 @@
+import React from 'react';
+import styles from './homepage.css';
+
+const Homepage = () => {
+    return (
+        <div className={styles.container}>
+            {/* Hero Banner Section */}
+            <header className={styles.hero}>
+                <h1 className={styles.title}>Welcome to <span className={styles.brand}>ChinaBlocks</span> 🥭🇨🇳</h1>
+                <p className={styles.subtitle}>
+                    The supercharged, high-power visual block engine equipped with native WebAudio, Regex, and custom extension support.
+                </p>
+                <div className={styles.ctaGroup}>
+                    <a href="/editor" className={styles.primaryBtn}>Launch Editor 🚀</a>
+                    <a href="https://gitee.com" className={styles.secondaryBtn}>Gitee Repo 🐙</a>
+                </div>
+            </header>
+
+            {/* High-Power Feature Cards Section */}
+            <section className={styles.features}>
+                <h2 className={styles.sectionTitle}>Engine Capabilities ⚡</h2>
+                <div className={styles.cardGrid}>
+                    <div className={styles.card} style={{ borderColor: '#8A52ED' }}>
+                        <div className={styles.cardIcon}>🟪</div>
+                        <h3>Looks & DOM Overlays</h3>
+                        <p>Inject dynamic HTML elements and customized foreignObject layouts straight onto block targets.</p>
+                    </div>
+
+                    <div className={styles.card} style={{ borderColor: '#D652CE' }}>
+                        <div className={styles.cardIcon}>🌸</div>
+                        <h3>WebAudio Synthesis</h3>
+                        <p>30 pre-loaded Sound opcodes featuring pitch filters, lowpass resonance, and distortion controls.</p>
+                    </div>
+
+                    <div className={styles.card} style={{ borderColor: '#42C054' }}>
+                        <div className={styles.cardIcon}>🟩</div>
+                        <h3>Regex & Bitwise Logic</h3>
+                        <p>Perform pattern matching, text replacement, bitwise masking, and value clamping in real-time.</p>
+                    </div>
+
+                    <div className={styles.card} style={{ borderColor: '#E6436E' }}>
+                        <div className={styles.cardIcon}>🌺</div>
+                        <h3>Pre-Defined Procedures</h3>
+                        <p>Pre-loaded My Blocks featuring return values, local variables, and smooth position lerping.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Community Projects Section */}
+            <section className={styles.community}>
+                <h2 className={styles.sectionTitle}>What people are building 🌟</h2>
+                <div className={styles.projectGrid}>
+                    <div className={styles.projectCard}>
+                        <div className={styles.projectThumbnail} style={{ background: '#7539D8' }}>🎮</div>
+                        <h4>Cosmic Physics Sim</h4>
+                        <p>By @kenny6king</p>
+                    </div>
+                    <div className={styles.projectCard}>
+                        <div className={styles.projectThumbnail} style={{ background: '#E0820D' }}>🧮</div>
+                        <h4>Regex String Parser</h4>
+                        <p>By @dalao_dev</p>
+                    </div>
+                    <div className={styles.projectCard}>
+                        <div className={styles.projectThumbnail} style={{ background: '#2E97AF' }}>🎵</div>
+                        <h4>Synthesizer Pad v2</h4>
+                        <p>By @audio_master</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
+};
+
+export default Homepage;
