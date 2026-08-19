@@ -1,0 +1,5 @@
+// scratch-vm/src/extension-support/extension-manager.js⁠
+const builtinExtensions = {
+    // ... default extensions ...
+    formatbone: () => require('../extensions/scratch3_formatbone')
+};
